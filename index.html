@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<title>Coils of Lyria</title>
+<link rel="stylesheet" href="game.css">
+</head>
+<body>
+<div id="title" class="screen hero on">
+  <h1>Coils of Lyria</h1>
+  <p>Blackwater Ecolodge</p>
+  <div class="menu">
+    <button id="btnEnter"><b>Enter the lodge</b><span>You are Lyria. Walk the beach.</span></button>
+    <button id="btnFile"><b>Character file</b><span>Portrait and the official lie</span></button>
+  </div>
+</div>
+<div id="dossier" class="screen dossier">
+  <div class="card">
+    <img id="port" alt="Lyria"/>
+    <div>
+      <p class="hint">Island guide</p>
+      <h2>Lyria</h2>
+      <p>She works the Blackwater Ecolodge as if she grew out of the mangrove. Barefoot. Hide stitched like shed scales. Red paint across the brow.</p>
+      <button id="btnBack" style="margin-top:18px;padding:10px 16px;font-family:system-ui">Back</button>
+    </div>
+  </div>
+</div>
+<div id="play" class="screen">
+  <header class="bar"><strong>Blackwater</strong><span id="roomName">Beach</span><span class="sp">WASD · click to walk</span><button id="btnLyria" style="padding:4px 8px">Lyria</button><button id="btnMenu" style="padding:4px 8px">Menu</button></header>
+  <div id="stage">
+    <img id="mapimg" alt=""/>
+    <div id="mapfit">
+      <div id="actor"></div>
+    </div>
+    <div id="vn"><img id="bust"/><div><div class="phase" id="phase"></div><div class="who" id="who"></div><div class="txt" id="txt"></div><div id="choices"></div><div class="hint" id="tap">Tap to continue</div></div></div>
+    <div id="hint"></div>
+    <div id="stick"><div id="knob"></div></div>
+  </div>
+</div>
+<div id="end" class="screen hero">
+  <h1 id="endTitle">Ecolodge cleared</h1>
+  <p id="endTag">Hub ready</p>
+  <p id="endText" style="max-width:28rem;letter-spacing:0;text-transform:none;font-size:1.15rem;color:var(--fg);font-family:Georgia,serif"></p>
+  <div class="menu">
+    <button id="btnAgain"><b>Walk the lodge again</b><span>Same sand. Same landlord.</span></button>
+    <button id="btnTitle"><b>Title</b><span>Back to the beach sign</span></button>
+  </div>
+</div>
+<script src="asset-beach.js"></script>
+<script src="asset-deck.js"></script>
+<script src="asset-canopy.js"></script>
+<script src="asset-lyria.js"></script>
+<script src="asset-bust.js"></script>
+<script src="asset-walk.js"></script>
+<script src="game.js"></script>
+</body>
+</html>
