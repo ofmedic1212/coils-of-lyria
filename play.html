@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Coils of Lyria</title>
+<style>
+html,body{margin:0;height:100%;background:#070b09;color:#e8efe6;font-family:Georgia,serif;overflow:hidden}
+#bar{height:40px;display:flex;align-items:center;gap:12px;padding:0 12px;font-family:system-ui;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#8a9a86}
+#bar b{color:#c6e07a}
+canvas{display:block;margin:0 auto;background:#0b120e}
+#hint{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);font-family:system-ui;letter-spacing:.14em;text-transform:uppercase;font-size:12px;color:#c6e07a}
+</style>
+</head>
+<body>
+<div id="bar"><b>Blackwater</b><span id="room">Beach</span><span style="margin-left:auto">WASD / arrows</span></div>
+<canvas id="c" width="960" height="640"></canvas>
+<div id="hint"></div>
+<script>
+const canvas=document.getElementById('c'), ctx=canvas.getContext('2d');
+const keys={};
+const player={x:380,y:320,dir:0,frame:0,moving:false};
+let room='beach', lock=0, last=0, anim=0;
+const ROOMS={
+  beach:{
+    name:'Blackwater Beach',
+    draw(g){
+      g.fillStyle='#c9a56a'; g.fillRect(0,0,960,640);
+      g.fillStyle='#1aa3b8'; g.fillRect(760,0,200,640);
+      g.fillStyle='#0e7a8a'; for(let i=0;i<12;i++) g.fillRect(760,i*54,18,20);
+      g.fillStyle='#6b4a28'; g.fillRect(70,90,220,150);
+      g.fillStyle='#c4a45a'; g.fillRect(78,98,204,40);
+      g.fillStyle='#8b5a2b'; g.fillRect(70,230,220,18);
+      g.fillStyle='#2d5a28'; g.fillRect(0,0,380,40); g.fillRect(580,0,380,40);
+      g.fillStyle='#6a7a62'; g.fillRect(430,10,120,70);
+      g.fillStyle='#3d2a14'; g.fillRect(160,430,20,120); g.fillRect(280,430,20,120);
+      g.strokeStyle='#5a8a3a'; g.lineWidth=8; g.beginPath(); g.arc(230,430,70,Math.PI,0); g.stroke();
+      g.fillStyle='#cc3333'; g.beginPath(); g.arc(500,250,28,0,6.3); g.fill();
+      g.beginPath(); g.arc(500,360,28,0,6.3); g.fill();
+    },
+    blocks:[{x:70,y:90,w:220,h:160},{x:760,y:0,w:200,h:640},{x:485,y:230,w:40,h:40},{x:485,y:340,w:40,h:40}],
+    exits:[{x:160,y:420,w:140,h:130,to:'deck',sx:480,sy:260,label:'Lodge deck'},{x:430,y:8,w:120,h:80,to:'canopy',sx:480,sy:520,label:'Jungle trail'}]
+  },
+  deck:{
+    name:'Lodge Deck',
+    draw(g){
+      g.fillStyle='#7a5a32'; g.fillRect(0,0,960,640);
+      g.fillStyle='#c9a56a'; g.fillRect(360,0,240,140);
+      g.fillStyle='#3d2a14'; g.fillRect(420,20,16,110); g.fillRect(524,20,16,110);
+      g.strokeStyle='#4a7a32'; g.lineWidth=8; g.beginPath(); g.arc(480,20,70,Math.PI,0); g.stroke();
+      g.fillStyle='#6b4a28'; g.fillRect(30,40,250,150);
+      g.fillStyle='#3aa0d0'; g.fillRect(300,280,360,180);
+      g.fillStyle='#d8d8d8'; g.strokeStyle='#cfcfcf'; g.strokeRect(300,280,360,180);
+      g.fillStyle='#ff6b9a'; g.beginPath(); g.arc(400,360,22,0,6.3); g.fill();
+      g.fillStyle='#d6d020'; g.beginPath(); g.arc(540,370,22,0,6.3); g.fill();
+    },
+    blocks:[{x:30,y:40,w:250,h:150},{x:310,y:290,w:340,h:160}],
+    exits:[{x:400,y:10,w:160,h:120,to:'beach',sx:400,sy:300,label:'Beach'}]
+  },
+  canopy:{
+    name:'Canopy Trail',
+    draw(g){
+      g.fillStyle='#14210f'; g.fillRect(0,0,960,640);
+      g.fillStyle='#3a5a28'; g.fillRect(300,0,360,640);
+      g.fillStyle='#1b2a14'; g.fillRect(0,0,300,640); g.fillRect(660,0,300,640);
+      g.fillStyle='#2d7a32'; g.fillRect(360,250,240,80);
+      g.fillStyle='#163d18';
+      for(let i=0;i<8;i++){ g.beginPath(); g.ellipse(480+Math.sin(i)*40,290+i*6,110-i*6,16,0,0,6.3); g.fill(); }
+    },
+    blocks:[{x:0,y:0,w:300,h:640},{x:660,y:0,w:300,h:640},{x:360,y:250,w:240,h:80}],
+    exits:[{x:400,y:560,w:160,h:70,to:'beach',sx:480,sy:140,label:'Beach'}]
+  }
+};
+function hits(x,y,b){return x>b.x&&x<b.x+b.w&&y>b.y&&y<b.y+b.h;}
+function blocked(nx,ny){
+  if(nx<20||nx>940||ny<20||ny>620) return true;
+  const r=ROOMS[room];
+  const here=r.blocks.some(b=>hits(player.x,player.y,b));
+  const next=r.blocks.some(b=>hits(nx,ny,b));
+  return next && !here;
+}
+function drawLyria(g){
+  const bob=player.moving&&player.frame===1?-3:0;
+  g.save(); g.translate(player.x, player.y+bob);
+  g.fillStyle='#3a2216'; g.fillRect(-10,-46,20,16);
+  g.fillStyle='#c48a62'; g.fillRect(-8,-32,16,10);
+  g.fillStyle='#8b3a1c'; g.fillRect(-12,-22,24,14);
+  g.fillStyle='#c48a62'; g.fillRect(-6,-8,5,14); g.fillRect(2,-8,5,14);
+  if(player.dir===2) g.fillRect(-16,-20,8,6);
+  if(player.dir===3) g.fillRect(8,-20,8,6);
+  g.restore();
+}
+function tick(ts){
+  requestAnimationFrame(tick);
+  if(!last) last=ts;
+  const dt=Math.min(0.05,(ts-last)/1000); last=ts;
+  if(lock>0) lock-=dt;
+  let dx=0,dy=0;
+  if(keys.ArrowLeft||keys.KeyA) dx-=1;
+  if(keys.ArrowRight||keys.KeyD) dx+=1;
+  if(keys.ArrowUp||keys.KeyW) dy-=1;
+  if(keys.ArrowDown||keys.KeyS) dy+=1;
+  const len=Math.hypot(dx,dy);
+  if(len>0){
+    const nx=player.x+dx/len*220*dt, ny=player.y+dy/len*220*dt;
+    player.dir = Math.abs(dx)>=Math.abs(dy) ? (dx<0?2:3) : (dy<0?1:0);
+    if(!blocked(nx,player.y)) player.x=nx;
+    if(!blocked(player.x,ny)) player.y=ny;
+    player.moving=true; anim+=dt;
+    if(anim>0.16){anim=0; player.frame=player.frame===1?3:1;}
+  } else { player.moving=false; player.frame=0; }
+  let label='';
+  if(lock<=0){
+    for(const e of ROOMS[room].exits){
+      if(hits(player.x,player.y,e)){
+        room=e.to; player.x=e.sx; player.y=e.sy; lock=0.9;
+        document.getElementById('room').textContent=ROOMS[room].name;
+        break;
+      }
+    }
+  }
+  if(lock<=0){
+    for(const e of ROOMS[room].exits){
+      if(hits(player.x,player.y,e)) label='Walk through · '+e.label;
+    }
+  }
+  document.getElementById('hint').textContent=label;
+  const r=ROOMS[room];
+  r.draw(ctx);
+  drawLyria(ctx);
+}
+window.addEventListener('keydown',e=>keys[e.code]=true);
+window.addEventListener('keyup',e=>keys[e.code]=false);
+document.getElementById('room').textContent=ROOMS[room].name;
+requestAnimationFrame(tick);
+</script>
+</body>
+</html>
